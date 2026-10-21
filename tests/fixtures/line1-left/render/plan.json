@@ -1,0 +1,58 @@
+{
+  "theme": "signage",
+  "masthead": "1호선의 방향",
+  "scenes": [
+    {
+      "sentences": [1, 3],
+      "headline": [[{"t": "서울 지하철"}], [{"t": "1호선만 "}, {"t": "반대", "em": true}]],
+      "layout": {"kind": "statement", "lines": [[{"t": "오른쪽", "swap": "왼쪽", "swapAt": 2}]], "at": 1},
+      "box": {"title": "고장 · 실수", "text": "둘 다 아니다", "at": 3},
+      "source": "자료: 중앙일보 · 정책브리핑"
+    },
+    {
+      "sentences": [4, 6],
+      "headline": [[{"t": "우리나라"}], [{"t": "첫 철도", "em": true}]],
+      "layout": {"kind": "number", "value": "1899", "label": "제물포 ~ 노량진", "at": 4},
+      "box": {"title": "일제강점기", "text": "일본식, 곧 영국식 왼쪽 통행", "at": 5},
+      "source": "자료: 대한민국역사박물관 · 중앙일보 · 정책브리핑"
+    },
+    {
+      "sentences": [7, 8],
+      "headline": [[{"t": "1946년"}], [{"t": "자동차", "em": true}, {"t": "만 바뀌다"}]],
+      "layout": {"kind": "shift", "from": "왼쪽", "to": "오른쪽", "label": "미군정, 자동차 통행", "at": 7},
+      "box": {"title": "기차는", "text": "왼쪽 그대로", "at": 8},
+      "source": "자료: 조선일보 · 서초구청"
+    },
+    {
+      "sentences": [9, 11],
+      "headline": [[{"t": "1호선이"}], [{"t": "왼쪽", "em": true}, {"t": "인 이유"}]],
+      "layout": {"kind": "checks", "items": [{"text": "1974 개통", "at": 9}, {"text": "기차와 이어 달림", "at": 10}, {"text": "2호선부터 오른쪽", "at": 11}]},
+      "source": "자료: 중앙일보 · 정책브리핑"
+    },
+    {
+      "sentences": [12, 14],
+      "headline": [[{"t": "오른쪽으로"}], [{"t": "바꾸면 "}, {"t": "될까", "em": true}]],
+      "layout": {"kind": "statement", "lines": [[{"t": "신호부터"}], [{"t": "안내판까지"}]], "at": 13},
+      "box": {"title": "그래서", "text": "바꾸는 대신 길을 꼬았다", "at": 14},
+      "source": "자료: 정책브리핑 · 중앙일보"
+    },
+    {
+      "sentences": [15, 16],
+      "headline": [[{"t": "4호선"}], [{"t": "남태령 ~ "}, {"t": "선바위", "em": true}]],
+      "layout": {"kind": "shift", "from": "오른쪽", "to": "왼쪽", "label": "지하철에서 철도로", "at": 15, "toAt": 16},
+      "source": "자료: 중앙일보 · 정책브리핑"
+    },
+    {
+      "sentences": [17, 18],
+      "headline": [[{"t": "땅속에서"}], [{"t": "X자", "em": true}, {"t": "로 엇갈린다"}]],
+      "layout": {"kind": "number", "value": "꽈배기굴", "label": "남태령역 ~ 선바위역", "at": 18},
+      "source": "자료: 중앙일보 · 정책브리핑"
+    },
+    {
+      "sentences": [19, 20],
+      "headline": [[{"t": "1호선이"}], [{"t": "왼쪽", "em": true}, {"t": "인 이유"}]],
+      "layout": {"kind": "statement", "lines": [[{"t": "1899년의"}], [{"t": "첫 선로", "em": true}]], "at": 20},
+      "source": "자료: 대한민국역사박물관"
+    }
+  ]
+}
