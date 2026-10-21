@@ -1,0 +1,26 @@
+# 키와 영상 결과물은 올리지 않는다
+.env
+work/
+
+# 스킬은 우리 쇼츠 스킬만 올린다 — Remotion·HyperFrames 등 다른 스킬은 노션 「준비」대로 각자 설치
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/shorts-script/
+!.claude/skills/shorts-narration/
+!.claude/skills/groq-timing/
+!.claude/skills/shorts-style-drafts/
+!.claude/skills/shorts-render/
+!.claude/skills/shorts-make/
+skills-lock.json
+
+# Typecast 경로는 강사 맥 전용 — 크롬 조작과 읽기본 변환은 사내 코드에서 옮긴 것이라 올리지 않는다(일레븐랩스는 필요 없음)
+.claude/skills/shorts-narration/scripts/typecast_web.py
+.claude/skills/shorts-narration/scripts/readingform.py
+.claude/skills/shorts-narration/scripts/make_reading.py
+.claude/skills/shorts-narration/rules/
+
+# 설치·임시 파일
+node_modules/
+__pycache__/
+.DS_Store
