@@ -16,13 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 노션에서는 winget 약관 동의를 물으면 Y — 여기서는 플래그로 미리 동의한다.
+      # run 블록 안에는 한글을 쓰지 않는다(Windows PowerShell 5.1 이 BOM 없는 스크립트를 ANSI 로 읽음).
       - name: 1 기본 도구 설치 (노션과 같은 winget 패키지)
         run: |
           winget --version
           foreach ($id in "Gyan.FFmpeg", "astral-sh.uv", "OpenJS.NodeJS.LTS", "Git.Git") {
-            # 노션에서는 약관 동의를 물으면 Y — 여기서는 플래그로 미리 동의한다
             winget install --id $id -e --accept-source-agreements --accept-package-agreements --disable-interactivity
-            "winget $id → 종료 코드 $LASTEXITCODE"
+            "winget $id -> exit $LASTEXITCODE"
           }
           exit 0
 
@@ -90,14 +91,15 @@ jobs:
         env:
           UV_PYTHON_PREFERENCE: only-managed
         run: |
-          uv run .claude/skills/shorts-upload/scripts/title_check.py --title "4호선 땅속에 꽈배기 터널이 있는 이유" --screen "혼자 반대로 달린다"
+          $t = Get-Content -Encoding UTF8 tests/fixtures/title-check.txt
+          uv run .claude/skills/shorts-upload/scripts/title_check.py --title $t[0] --screen $t[1]
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
       - name: 11 한글 폴더 이름에서 커버 렌더
         env:
           UV_PYTHON_PREFERENCE: only-managed
         run: |
-          $hangul = -join [char[]](0xD55C, 0xAE00, 0xD3F4, 0xB354)   # 「한글폴더」(스크립트 파일 인코딩과 상관없게)
+          $hangul = -join [char[]](0xD55C, 0xAE00, 0xD3F4, 0xB354)
           $dir = Join-Path $env:RUNNER_TEMP $hangul
           Copy-Item -Recurse $env:EP $dir
           uv run .claude/skills/shorts-render/scripts/make_video.py $dir --cover
