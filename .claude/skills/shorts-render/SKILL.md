@@ -8,7 +8,7 @@ description: "쇼츠 5단계 — 조립·렌더. 4단계에서 고른 스타일�
 입력: `work/episodes/<폴더>/` 의 `script.md`(대본·팩트체크) · `narration.mp3` · `sentences.json` · `drafts/drafts.json`(고른 스타일 `chosen`)
 - 폴더 이름을 안 주면 가장 최근에 바뀐 에피소드를 고르고 한 줄로 밝힌다.
 
-결과: `work/episodes/<폴더>/video.mp4` (1080×1920, 30fps), `render/plan.json`(장면 설계), `render/props.json`(렌더에 쓴 값), `render/check/NN.png`(장면별 점검 화면)
+결과: `work/episodes/<폴더>/video.mp4` (1080×1920, 30fps), `cover.png`(커버 — 첫 화면 문구를 고른 스타일로, 영상에는 넣지 않고 스튜디오에서 커버로 올린다), `render/plan.json`(장면 설계), `render/props.json`(렌더에 쓴 값), `render/check/NN.png`(장면별 점검 화면)
 
 멈추는 곳은 한 번 — 영상을 보내 확인받을 때. 렌더(약 2분)는 크레딧이 들지 않는다.
 
@@ -19,7 +19,7 @@ description: "쇼츠 5단계 — 조립·렌더. 4단계에서 고른 스타일�
 
 ## 1. 장면 설계 — render/plan.json (내가 쓴다)
 
-대본을 읽고 장면을 짠다. 사내 「신문 지면형·실무 노트형」처럼 **장면 종류를 고르고 칸만 채운다** — 그림은 그리지 않는다.
+대본을 읽고 장면을 짠다. 기준 스타일 「신문 지면·실무 노트」처럼 **장면 종류를 고르고 칸만 채운다** — 그림은 그리지 않는다.
 
 - 장면 하나 = 문장 1~8개, 5~10초. 문장 범위는 1번부터 끝까지 빠짐·겹침 없이 이어져야 한다(어기면 스크립트가 멈춘다).
 - 장면 종류(`layout.kind`):

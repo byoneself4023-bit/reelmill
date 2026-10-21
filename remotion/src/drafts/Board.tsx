@@ -18,10 +18,20 @@ export const boardSize = (p: BoardProps) => ({
 });
 
 export const Board: React.FC<BoardProps> = ({ dir, themes, scenes }) => (
-  <AbsoluteFill style={{ background: "#2A2A2A", padding: 30, fontFamily: THEMES.note.body }}>
+  <AbsoluteFill
+    style={{ background: "#2A2A2A", padding: 30, fontFamily: THEMES.note.body }}
+  >
     <div style={{ display: "flex", gap: 30, marginLeft: 0 }}>
       {themes.map((t, i) => (
-        <div key={t} style={{ width: CELL_W, color: "#FFF", fontSize: 40, fontWeight: 900 }}>
+        <div
+          key={t}
+          style={{
+            width: CELL_W,
+            color: "#FFF",
+            fontSize: 40,
+            fontWeight: 900,
+          }}
+        >
           {String.fromCharCode(65 + i)}. {THEMES[t].name}
         </div>
       ))}
@@ -29,7 +39,11 @@ export const Board: React.FC<BoardProps> = ({ dir, themes, scenes }) => (
     {scenes.map((s) => (
       <div key={s} style={{ display: "flex", gap: 30, marginTop: 30 }}>
         {themes.map((t) => (
-          <Img key={t} src={staticFile(`${dir ? dir + "/" : ""}${t}-${s}.png`)} style={{ width: CELL_W, height: CELL_H }} />
+          <Img
+            key={t}
+            src={staticFile(`${dir ? dir + "/" : ""}${t}-${s}.png`)}
+            style={{ width: CELL_W, height: CELL_H }}
+          />
         ))}
       </div>
     ))}

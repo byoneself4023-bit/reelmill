@@ -16,7 +16,7 @@ description: "쇼츠 3단계 — 문장 시각. 2단계 narration.mp3 를 Groq �
 
 - `reelmill/.env` 에 `GROQ_API_KEY` (키 값은 화면에 찍지 않는다).
 - `uv`, `ffmpeg` (필요한 파이썬 패키지는 uv 가 알아서 받는다).
-- 코드는 스킬 안 `scripts/timing.py` 하나다(사내 sentences·sound·subtitle 에서 옮김). 받아 적기 결과는 `~/.cache/reelmill/transcripts` 에 캐시한다.
+- 코드는 스킬 안 `scripts/timing.py` 하나다. 받아 적기 결과는 `~/.cache/reelmill/transcripts` 에 캐시한다.
 
 ## 1. 재기
 

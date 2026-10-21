@@ -50,7 +50,7 @@ def ready() -> bool:
 
 
 def progress(ep: Path) -> int:
-    """다음에 할 단계 번호(1~5), 다 됐으면 6."""
+    """다음에 할 단계 번호(1~6), 다 됐으면 7."""
     d = ep / "drafts" / "drafts.json"
     chosen = json.loads(d.read_text(encoding="utf-8")).get("chosen") if d.exists() else None
     sj = ep / "sentences.json"
@@ -66,14 +66,15 @@ def progress(ep: Path) -> int:
         ("3 문장 시각", timing_ok),
         ("4 스타일 시안", bool(chosen)),
         ("5 조립·렌더", (ep / "video.mp4").exists()),
+        ("6 업로드 문구", (ep / "upload.md").exists()),
     ]
     print(f"[진행] {ep.name}")
-    nxt = 6
+    nxt = 7
     for i, (name, done) in enumerate(steps, 1):
         print(f"  {'✓' if done else '·'} {name}")
-        if not done and nxt == 6:
+        if not done and nxt == 7:
             nxt = i
-    if (ep / "video.mp4").exists() and nxt < 6:
+    if (ep / "video.mp4").exists() and nxt < 5:
         print("  ⚠️ 앞 단계가 바뀌어 영상이 지금 결과물과 맞지 않을 수 있습니다")
     return nxt
 
@@ -82,7 +83,7 @@ def main() -> None:
     ok = ready()
     if len(sys.argv) > 1:
         n = progress(Path(sys.argv[1]).resolve())
-        print("다음: 완성" if n == 6 else f"다음: {n}단계")
+        print("다음: 완성" if n == 7 else f"다음: {n}단계")
     if not ok:
         print("준비물이 모자랍니다(✗)")
 

@@ -4,7 +4,8 @@
 """장면 설계(render/plan.json) + 문장 시각(sentences.json) + 나레이션으로 영상을 조립한다(Remotion).
 
   uv run make_video.py <에피소드 폴더> --stills    # 장면마다 끝 무렵 정지 화면 → render/check/NN.png (점검용)
-  uv run make_video.py <에피소드 폴더> --render    # 영상 → <에피소드>/video.mp4
+  uv run make_video.py <에피소드 폴더> --render    # 영상 → <에피소드>/video.mp4 + 커버 cover.png
+  uv run make_video.py <에피소드 폴더> --cover     # 커버만 → <에피소드>/cover.png
 
 plan.json 의 "at"·"noteAt"·"swapAt"·"toAt" 은 문장 번호다. 여기서 그 문장이 시작하는 초로 바꾼다
 — 요소가 「그 숫자를 말하는 순간」 나타나게. 장면 경계도 장면 첫 문장의 시작 시각이다.
@@ -119,12 +120,28 @@ def remotion(args: list[str], props: dict) -> None:
         sys.exit(f"[중단] Remotion 실패\n{(r.stdout + r.stderr)[-1500:]}")
 
 
+def cover(ep: Path, props: dict) -> None:
+    """script.md 의 「## 첫 화면 문구」와 고른 제목으로 커버 한 장을 만든다."""
+    md = (ep / "script.md").read_text(encoding="utf-8")
+    text = md.split("## 첫 화면 문구", 1)[1].strip().splitlines()[0].strip() if "## 첫 화면 문구" in md else ""
+    import re as _re
+    picked = _re.search(r"고른 제목:\s*(?:\d+\.\s*)?(.+)", md)
+    title = picked.group(1).strip() if picked else md.splitlines()[0].lstrip("# ").strip()
+    if not text:
+        print("[커버] 첫 화면 문구가 없어 건너뜁니다")
+        return
+    out = ep / "cover.png"
+    remotion(["still", "Cover", str(out)], {"theme": props["theme"], "masthead": props["masthead"], "text": text, "title": title})
+    print(f"→ {out}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("episode")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--stills", action="store_true")
     g.add_argument("--render", action="store_true")
+    g.add_argument("--cover", action="store_true")
     a = ap.parse_args()
     ep = Path(a.episode).resolve()
     props = build(ep)
@@ -137,11 +154,14 @@ def main() -> None:
             print(f"[점검] 장면 {i} · {f / FPS:.1f}초", flush=True)
             remotion(["still", "Episode", str(out / f"{i:02d}.png"), f"--frame={f}", pub], props)
         print(f"→ {out}")
+    elif a.cover:
+        cover(ep, props)
     else:
         out = ep / "video.mp4"
         print(f"[렌더] {props['duration']:.1f}초 · 장면 {len(props['scenes'])}개 …", flush=True)
         remotion(["render", "Episode", str(out), pub], props)
         print(f"→ {out}")
+        cover(ep, props)
 
 
 if __name__ == "__main__":

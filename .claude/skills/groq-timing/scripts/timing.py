@@ -46,8 +46,8 @@ SR, HOP, PEAK_DROP, MIN_SIL, MIN_SPEECH = 16000, 0.010, 38.0, 0.18, 0.06
 # ── 키·받아 적기 ──────────────────────────────────────────────────────────
 
 def groq_key() -> str:
-    """reelmill/.env 의 GROQ_API_KEY. 없으면 사내 설정(~/.config/watch/.env)을 본다. 화면에 찍지 않는다."""
-    for env in (ROOT / ".env", Path.home() / ".config" / "watch" / ".env"):
+    """reelmill/.env 의 GROQ_API_KEY. 화면에 찍지 않는다."""
+    for env in (ROOT / ".env",):
         if env.exists():
             for line in env.read_text(encoding="utf-8").splitlines():
                 k, _, v = line.strip().partition("=")

@@ -11,7 +11,7 @@
   uv run elevenlabs.py <에피소드 폴더> --check               # 남은 글자·들 글자만 본다(글자 안 씀)
   uv run elevenlabs.py <에피소드 폴더> --generate [--voice ID] [--out narration.mp3]   # 글자 씀
 
-키: reelmill/.env 의 ELEVENLABS_API_KEY (없으면 ~/.config/watch/.env). 화면에 찍지 않는다.
+키: reelmill/.env 의 ELEVENLABS_API_KEY. 화면에 찍지 않는다.
 목소리: --voice 로 주거나, reelmill/.env 의 ELEVENLABS_VOICE_ID.
 요금: 따로 청구되지 않고 요금제의 남은 글자에서 빠진다(읽기본 글자 수만큼).
 """
@@ -35,7 +35,7 @@ SETTINGS = {"stability": 0.5, "similarity_boost": 0.75, "speed": 1.0}   # 목소
 
 
 def env(name: str) -> str:
-    for f in (ROOT / ".env", Path.home() / ".config" / "watch" / ".env"):
+    for f in (ROOT / ".env",):
         if f.exists():
             for line in f.read_text(encoding="utf-8").splitlines():
                 k, _, v = line.strip().partition("=")

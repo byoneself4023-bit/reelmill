@@ -14,13 +14,13 @@ description: "쇼츠 4단계 — 스타일 시안. 대본에 어울리는 화면
 
 ## 준비 (처음 한 번)
 
-- Remotion 작업실 `reelmill/remotion` 이 있어야 한다. 모든 영상이 함께 쓰는 폴더 하나다(영상마다 생기지 않는다). 4단계 시안과 5단계 렌더가 같이 쓴다.
-  - 없으면: `npx create-video@latest --yes --blank --no-tailwind remotion` → `cd remotion && npm i && npx remotion add @remotion/google-fonts`, 그리고 `src/drafts/`(themes.ts · Draft.tsx · Board.tsx)와 `src/Root.tsx` 를 넣는다.
+- Remotion 작업실 `reelmill/remotion` 은 저장소에 들어 있다. 모든 영상이 함께 쓰는 폴더 하나다(영상마다 생기지 않는다). 4단계 시안과 5단계 렌더가 같이 쓴다.
+  - 처음 한 번 `cd remotion && npm install` 이 되어 있어야 한다. 안 되어 있으면 무엇을 실행하면 되는지 알려 주고 멈춘다.
 - 그림 파일은 에피소드 폴더에만 생긴다. 비교판도 `--public-dir` 로 에피소드 `drafts` 폴더를 바로 읽으므로 remotion 쪽에는 아무것도 쌓이지 않는다.
 
 ## 화면 원칙 (모든 스타일 공통)
 
-- **그림 없이 글·숫자·상자·막대로만 짠다.** 사내 「신문 지면형」·「실무 노트형」과 같은 방식이다. 실사가 꼭 필요하면 나중에 구글 플로우로 따로 넣는다.
+- **그림 없이 글·숫자·상자·막대로만 짠다.** 기준 스타일 「신문 지면」·「실무 노트」와 같은 방식이다.
 - 쇼츠 안전 영역(1080×1920): 위 280 · 아래 520 · 왼쪽 76 · 오른쪽 140. 자막은 y≈1300, 스타일과 상관없이 굵은 고딕.
 - 화면에 나오는 숫자는 팩트체크 ✓ 값만. 큰 숫자는 한 장면에 하나만.
 
@@ -29,12 +29,12 @@ description: "쇼츠 4단계 — 스타일 시안. 대본에 어울리는 화면
 - **기준 스타일 두 개(신문 지면 `paper`, 실무 노트 `note`)는 그대로 쓰지 않는다.** 파생의 출발점이다 — 머리글·제목·강조 숫자·상자·자막 자리 같은 뼈대는 이어받고, 겉모습(바탕·글꼴·색·무늬·정렬·은유)을 새로 만든다.
 - 3개는 서로, 그리고 기준과도 세 가지 이상 다르게: 밝기, 글꼴 계열(고딕·명조·굵은 고딕), 바탕 무늬, 정렬, 은유.
 - 대본 주제에 어울리는 은유를 고른다. 금메달 예: 성적서(금 함량 검사) · 경매 도록(값어치) · 포스터(숫자 한 방).
-- 스타일은 `remotion/src/drafts/themes.ts` 의 `THEMES` 에 있다. 맞는 게 없으면 새 스타일 객체를 더한다(글꼴은 `@remotion/google-fonts` 의 한글 글꼴: NotoSansKR · NotoSerifKR · IBMPlexSansKR · GowunBatang · BlackHanSans · DoHyeon · Hahmlet · NanumMyeongjo …). 지금 있는 파생 스타일: `assay`(성적서) · `auction`(경매 도록) · `poster`(포스터).
+- 스타일은 `remotion/src/drafts/themes.ts` 의 `THEMES` 에 있다. 맞는 게 없으면 새 스타일 객체를 더한다(글꼴은 `@remotion/google-fonts` 의 한글 글꼴: NotoSansKR · NotoSerifKR · IBMPlexSansKR · GowunBatang · BlackHanSans · DoHyeon · Hahmlet · NanumMyeongjo …). 지금 있는 파생 스타일: `assay`(성적서) · `auction`(경매 도록) · `poster`(포스터) · `notice`(공고문) · `receipt`(영수증) · `lottery`(복권) · `ticket`(승차권) · `timetable`(발차 시각표) · `signage`(역 표지판). 최근 편과 같은 스타일만 고르지 않는다.
 - 고른 3개와 각각의 은유를 한 줄씩 밝힌다.
 
 ## 2. 비교할 장면 2개 정하기
 
-- 대본에서 성격이 다른 장면 2개 — 숫자가 바뀌는 장면(`shift`) 하나, 구성·비교 장면(`parts`) 하나가 기본.
+- 대본에서 성격이 다른 장면 2개 — 숫자가 바뀌는 장면(`shift`) 하나, 구성·비교 장면(`parts`) 하나가 기본. 숫자가 없는 대본이면 큰 글 장면(`statement`) 하나, 체크 항목 장면(`checks`) 하나로 한다.
 - `drafts/drafts.json` 을 쓴다:
 
 ```json
