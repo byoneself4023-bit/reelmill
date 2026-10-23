@@ -1,6 +1,6 @@
 ---
 name: shorts-make
-description: "쇼츠 한 편을 처음부터 끝까지 — 1 대본 → 2 나레이션 → 3 문장 시각 → 4 스타일 시안 → 5 조립·렌더 → 6 업로드 문구를 이어서 돌려 video.mp4 와 upload.md 까지 만든다. 꼭 필요한 곳에서만 멈춘다. 중간에 끊겨도 다시 부르면 이어서 한다. /shorts-make 로 부르고 이어서 주제(와 길이)를 쓴다."
+description: "쇼츠 한 편을 처음부터 끝까지 — 1 대본 → 2 나레이션 → 3 자막 맞추기 → 4 스타일 시안 → 5 조립·렌더 → 6 업로드 문구를 이어서 돌려 video.mp4 와 upload.md 까지 만든다. 꼭 필요한 곳에서만 멈춘다. 중간에 끊겨도 다시 부르면 이어서 한다. /shorts-make 로 부르고 이어서 주제(와 길이)를 쓴다."
 ---
 
 # 쇼츠 한 편 만들기
@@ -11,7 +11,7 @@ description: "쇼츠 한 편을 처음부터 끝까지 — 1 대본 → 2 나레
 |---|---|---|
 | 1 대본 | `.claude/skills/shorts-script/SKILL.md` | script.md |
 | 2 나레이션 | `.claude/skills/shorts-narration/SKILL.md` | narration.mp3 |
-| 3 문장 시각 | `.claude/skills/groq-timing/SKILL.md` | sentences.json |
+| 3 자막 맞추기 | `.claude/skills/groq-timing/SKILL.md` | sentences.json |
 | 4 스타일 시안 | `.claude/skills/shorts-style-drafts/SKILL.md` | drafts/ (chosen) |
 | 5 조립·렌더 | `.claude/skills/shorts-render/SKILL.md` | video.mp4 |
 | 6 업로드 문구 | `.claude/skills/shorts-upload/SKILL.md` | upload.md |
@@ -47,7 +47,7 @@ uv run .claude/skills/shorts-make/scripts/status.py [work/episodes/<폴더>]
 | 2단계 — 생성 직전(미리 허락 없을 때) | 글자·크레딧이 든다 | 「생성해줘」 |
 | 4단계 — 비교판(「맡길게」가 아닐 때) | 스타일은 사람이 고른다 | 「A로 가자」 |
 
-- 그 밖(3단계 문장 시각, 5단계 점검 화면·렌더, 단계 사이 넘어가기)은 멈추지 않고 이어 간다.
+- 그 밖(3단계 자막 맞추기, 5단계 점검 화면·렌더, 단계 사이 넘어가기)은 멈추지 않고 이어 간다.
 - 1단계 대본 확인에서 「좋아」를 받으면 script.md 를 저장하고(1단계 스킬의 「저장」) 바로 2단계로 간다.
 - 멈출 때마다 맨 위에 한 줄로 어디인지 밝힌다: 「[2/6 나레이션] 생성 전 확인」.
 

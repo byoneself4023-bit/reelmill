@@ -7,6 +7,7 @@ import { Masthead } from "../drafts/Draft";
 export type CoverProps = {
   theme: ThemeKey;
   masthead: string;
+  mastLabel?: string; // 스타일 머리글 이름을 이 영상에서만 바꿀 때
   text: string; // 첫 화면 문구
   title: string; // 고른 제목(작게)
 };
@@ -16,10 +17,11 @@ const W = 1080 - SAFE.left - SAFE.right;
 export const Cover: React.FC<CoverProps> = ({
   theme,
   masthead,
+  mastLabel,
   text,
   title,
 }) => {
-  const th = THEMES[theme];
+  const th = mastLabel ? { ...THEMES[theme], mastLabel } : THEMES[theme];
   loadThemeFonts(th);
   const n = text.replace(/\s/g, "").length;
   const size = n <= 6 ? 190 : n <= 9 ? 160 : 130;

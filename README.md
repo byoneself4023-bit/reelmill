@@ -6,7 +6,7 @@
 |---|---|---|
 | 1 대본 | `/shorts-script` | script.md |
 | 2 나레이션 | `/shorts-narration` | narration.mp3 |
-| 3 문장 시각 | `/groq-timing` | sentences.json |
+| 3 자막 맞추기 | `/groq-timing` | sentences.json |
 | 4 스타일 시안 | `/shorts-style-drafts` | drafts/ |
 | 5 조립·렌더 | `/shorts-render` | video.mp4 · cover.png |
 | 6 업로드 문구 | `/shorts-upload` | upload.md |

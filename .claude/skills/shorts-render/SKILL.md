@@ -1,6 +1,6 @@
 ---
 name: shorts-render
-description: "쇼츠 5단계 — 조립·렌더. 4단계에서 고른 스타일로 대본 전체의 장면을 짜고(render/plan.json), 문장 시각에 맞춰 숫자·글이 나타나게 Remotion 으로 조립해 나레이션·자막을 얹은 video.mp4 를 만든다. /shorts-render 로 부른다. 폴더 이름(예: gold-medal)은 생략하면 가장 최근 에피소드를 쓴다."
+description: "쇼츠 5단계 — 조립·렌더. 4단계에서 고른 스타일로 대본 전체의 장면을 짜고(render/plan.json), 자막 맞추기 결과에 맞춰 숫자·글이 나타나게 Remotion 으로 조립해 나레이션·자막을 얹은 video.mp4 를 만든다. /shorts-render 로 부른다. 폴더 이름(예: gold-medal)은 생략하면 가장 최근 에피소드를 쓴다."
 ---
 
 # 조립·렌더
@@ -31,6 +31,8 @@ description: "쇼츠 5단계 — 조립·렌더. 4단계에서 고른 스타일�
 | `statement` | 큰 글 두세 줄. 낱말 바꾸기 가능(`swap`·`swapAt`) | lines · at |
 | `checks` | 체크 항목이 하나씩 | items[{text, at}] |
 | `parts` | 전체 막대 안 몫이 하나씩 차오름 + 줄마다 이름·값·짧은 설명 | total · parts[{name, value, weight, tone, note, at, noteAt}] |
+| `waterfall` | 막대 4개: 시작 → 곱한 값 → 목표, 그리고 둘째·셋째 사이 차이(+ 빨강 · − 초록). 막대가 문장마다 하나씩 올라온다 | title · bars[{label, note, value, amount, at}] ×3 · diff{label, note, value, at} · foot |
+| `heatmap` | 행×열 표. 칸마다 큰 값(+작은 값), 값 구간 색, 기준 칸 노란 테두리, 범례. `focus` 를 주면 그 문장에서 그 칸으로 확대·이동(쇼츠 줌인) | colLabel · rowLabel · cols · rows · cells[[{v, text, note}]] · base[행,열] · bands[{min, label}] · baseLabel · at · focus[{at, cell}] |
 | `rows` | 표 줄 — 줄마다 작은 이름 위에 큰 값(4줄 이상이면 한 줄에 이름·값). 비용 비교·날짜처럼 이름–값이 여러 줄일 때 | title · rows[{label, value, at, em}] |
 
 - `shift` 는 두 값을 합쳐 9자 안일 때만 쓴다(「2종 → 3종」). 「104.79% → 90.95%」처럼 길면 오른쪽 안전 영역을 넘는다 — `number` 나 `rows` 로 바꾼다. `checks` 는 4개까지, `rows` 는 제목 포함 4줄까지가 자막·출처 줄과 안 겹친다.
@@ -73,7 +75,7 @@ uv run .claude/skills/shorts-render/scripts/make_video.py work/episodes/<롱폼 
 - 장면 하나 = 문장 2~8개, 6~15초. 쇼츠로 잘라 쓸 구간의 경계에서도 장면을 나눈다(잘라 낸 쇼츠가 장면을 그대로 물려받는다). 제목은 13자 × 2줄 안 — 잘라 낸 9:16 에서도 그대로 들어간다.
 - 안전 영역: 양옆 110 · 머리글 y 64 · 본문 y 196~816 · 출처 y 846 · 자막 y 906(56px).
 - 점검 화면: 장면마다 `render/check/NN.png` + 장마다 `render/check/chN.png`(장 카드). `--theme` 을 주면 `render/check/<스타일>-NN.png` 로 따로 뽑는다(plan.json 은 그대로). `--theme`·`--scenes` 는 `--long --stills` 에서만 쓴다(쇼츠 점검 화면은 늘 전부 뽑는다).
-- 렌더가 끝나면 유튜브 설명란에 붙일 장 시각(0:00 장 제목)을 찍어 준다. 롱폼 커버(16:9 썸네일)는 아직 없다.
+- 렌더가 끝나면 유튜브 설명란에 붙일 장 시각(0:00 장 제목)을 찍어 주고, 롱폼 썸네일 `thumbnail.png`(1280×720, 고른 제목 + 첫 장면 제목)를 만든다. 썸네일만 다시 뽑을 때는 `--long --cover`. 썸네일이 실패해도 영상은 정상으로 끝난다.
 - 점검 화면은 한 번 묶은 뒤 브라우저 하나로(`remotion/scripts/stills.mjs`), 소리 없이 뽑는다 — 37장 약 4분.
 - 렌더는 2분 조각으로 나눠 그리고, 조각 이름에 렌더 값·화면 코드 지문을 넣어 바뀐 것이 없을 때만 멈춘 뒤 이어 그린다(지문이 다른 옛 조각은 지운다). 소리 없이 그린 뒤 `narration.mp3` 를 ffmpeg 로 붙인다(8분짜리 소리를 Remotion 이 섞으면 임시 파일이 커서 디스크가 빠듯하면 멈춘다). 8분 영상 기준 수십 분이 걸릴 수 있어 백그라운드로 돌린다.
 - 쇼츠는 롱폼에서 잘라 낸다 → `/longform-cut`.

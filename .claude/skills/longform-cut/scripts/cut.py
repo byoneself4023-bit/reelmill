@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.10"
 # ///
-"""롱폼 에피소드에서 쇼츠를 잘라 낸다 — 같은 나레이션 구간, 같은 문장 시각, 같은 장면 설계로.
+"""롱폼 에피소드에서 쇼츠를 잘라 낸다 — 같은 나레이션 구간, 같은 자막 맞추기 결과, 같은 장면 설계로.
 
   uv run cut.py list <롱폼 폴더>                                   # 장별 문장 번호 · 글자 수 · 시각
   uv run cut.py make <롱폼 폴더> --chapter 2 --name <짧은 이름>       # 장 하나를 통째로
@@ -9,7 +9,7 @@
 
 make 는 <롱폼 폴더>/cuts/<이름>/ 에 보통 쇼츠 에피소드 모양으로 만든다.
   narration.mp3        롱폼 나레이션에서 문장 A 시작 ~ 문장 B 끝을 잘라 냄(새로 읽히지 않는다 — 크레딧 없음)
-  sentences.json       롱폼 문장 시각을 잘라 낸 구간 기준으로 당긴 것(번호는 1부터 다시)
+  sentences.json       롱폼 자막 맞추기 결과를 잘라 낸 구간 기준으로 당긴 것(번호는 1부터 다시)
   script.md            잘라 낸 문장만 「## 대본」에, 팩트체크는 롱폼 것을 그대로
   render/plan.json     롱폼 장면 중 구간에 걸친 것만 잘라 번호를 다시 매긴 것(이미 있으면 두고, --force 면 새로)
 그다음은 쇼츠와 같다: shorts-render 의 make_video.py <잘라 낸 폴더> --stills / --render (9:16).
@@ -28,8 +28,9 @@ from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-SEC_PER_CHAR = 66 / 530          # 일레븐랩스 eleven_v4 · 속도 1.0 실측(금메달 530자 66초) — 나레이션 전 어림용
+SEC_PER_CHAR = 60 / 450          # 일레븐랩스 eleven_v4 · 속도 1.0, 문단 이어 읽기·쉼 포함 실측(약 450자/분) — 나레이션 전 어림용
 LEAD, TAIL = 0.15, 0.35          # 잘라 낼 때 문장 앞뒤로 남길 숨(초). 앞뒤 문장 소리는 넘지 않는다
+GAP_MAX, GAP_KEEP = 0.3, 0.25    # --tighten: 문장 사이 무음이 GAP_MAX 초를 넘으면 GAP_KEEP 초로 줄인다
 AT_KEYS = ("at", "noteAt", "swapAt", "toAt")
 
 
@@ -167,7 +168,7 @@ def cmd_make(ep: Path, args: argparse.Namespace) -> None:
         sys.exit(f"[중단] 문장 범위 {a}~{b} 가 1~{total} 밖입니다")
     for f in ("narration.mp3", "sentences.json"):
         if not (ep / f).exists():
-            sys.exit(f"[중단] 롱폼 {f} 가 없습니다 — 롱폼 나레이션·문장 시각을 먼저 만드세요")
+            sys.exit(f"[중단] 롱폼 {f} 가 없습니다 — 롱폼 나레이션·자막 맞추기를 먼저 만드세요")
     sents = json.loads((ep / "sentences.json").read_text(encoding="utf-8"))["sentences"]
     if len(sents) != total:
         sys.exit(f"[중단] sentences.json 문장 {len(sents)}개와 대본 {total}개가 다릅니다")
@@ -180,34 +181,60 @@ def cmd_make(ep: Path, args: argparse.Namespace) -> None:
 
     # 1) 나레이션 구간 — 앞 문장 끝과 뒤 문장 시작을 넘지 않게 숨만 조금 남긴다
     long_dur = seconds(ep / "narration.mp3")
-    prev_end = (by[a - 1]["end"] or 0.0) if a > 1 else 0.0          # 앞 문장 시각을 못 찾았으면 막지 않는다
+    prev_end = (by[a - 1]["end"] or 0.0) if a > 1 else 0.0          # 앞 문장의 시각을 못 찾았으면 막지 않는다
     t0 = max(by[a]["start"] - LEAD, prev_end + 0.02 if a > 1 else 0.0, 0.0)
     t0 = min(t0, by[a]["start"])
     next_start = (by[b + 1]["start"] or long_dur) if b < total else long_dur
     t1 = min(by[b]["end"] + TAIL, next_start - 0.02 if b < total else long_dur, long_dur)
     t1 = max(t1, by[b]["end"])
-    clip = t1 - t0
+    # 남길 소리 구간. --tighten 이면 문장 사이 0.3초 넘는 무음을 0.25초로 줄인다(문장 안 쉼은 그대로)
+    kept = [[t0, t1]]
+    if getattr(args, "tighten", False):
+        kept, cur = [], t0
+        for k in range(a, b):
+            e, nx = by[k]["end"], by[k + 1]["start"]
+            if e is not None and nx is not None and nx - e > GAP_MAX:
+                kept.append([cur, e + GAP_KEEP / 2])
+                cur = nx - GAP_KEEP / 2
+        kept.append([cur, t1])
+
+    def shift(t: float) -> float:
+        """롱폼 시각 → 잘라 낸 쇼츠 시각(줄인 쉼만큼 당김)."""
+        acc = 0.0
+        for k0, k1 in kept:
+            if t <= k1:
+                return acc + max(0.0, t - k0)
+            acc += k1 - k0
+        return acc
+
+    clip = sum(k1 - k0 for k0, k1 in kept)
     audio = out / "narration.mp3"
-    # atrim 으로 자르고 시각을 0부터 다시 세야 페이드가 잘라 낸 구간 기준으로 걸린다(-ss 를 출력 옵션으로 쓰면 롱폼 기준이 된다)
-    r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(ep / "narration.mp3"),
-                        "-af", f"atrim=start={t0:.3f}:end={t1:.3f},asetpts=PTS-STARTPTS,"
-                               f"afade=t=in:d=0.02,afade=t=out:st={max(0.0, clip - 0.06):.3f}:d=0.06",
+    # atrim 으로 자르고 시각을 0부터 다시 세야 페이드가 잘라 낸 구간 기준으로 걸린다. 이어 붙이는 곳마다 10ms 페이드(딸깍 소리 방지)
+    parts, labels = [], []
+    for n, (k0, k1) in enumerate(kept):
+        fi = "afade=t=in:d=0.02" if n == 0 else "afade=t=in:d=0.01"
+        fo = f"afade=t=out:st={max(0.0, k1 - k0 - (0.06 if n == len(kept) - 1 else 0.01)):.3f}:d={0.06 if n == len(kept) - 1 else 0.01}"
+        parts.append(f"[0:a]atrim=start={k0:.3f}:end={k1:.3f},asetpts=PTS-STARTPTS,{fi},{fo}[p{n}]")
+        labels.append(f"[p{n}]")
+    graph = ";".join(parts) + f";{''.join(labels)}concat=n={len(kept)}:v=0:a=1[o]"
+    r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(ep / "narration.mp3"), "-filter_complex", graph, "-map", "[o]",
                         "-c:a", "libmp3lame", "-b:a", "128k", str(audio)],
                        capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         sys.exit(f"[중단] ffmpeg 실패\n{r.stderr[-800:]}")
 
-    # 2) 문장 시각 — 구간 시작을 0초로
+    # 2) 자막 맞추기 결과 — 구간 시작을 0초로(줄인 쉼만큼 당김)
     rows = []
     for k in range(a, b + 1):
         s = by[k]
-        rows.append({**s, "no": k - a + 1, "start": round(s["start"] - t0, 3),
-                     "end": round(min(s["end"], t1) - t0, 3), "long_no": k})
+        rows.append({**s, "no": k - a + 1, "start": round(shift(s["start"]), 3),
+                     "end": round(shift(min(s["end"], t1)), 3), "long_no": k})
     rows[0]["after"] = "쉼 뒤"
     h = hashlib.sha256(audio.read_bytes()).hexdigest()[:16]
     (out / "sentences.json").write_text(json.dumps({"audio": "narration.mp3", "audio_hash": h,
                                                      "cut_from": {"episode": ep.name, "sentences": [a, b],
-                                                                  "seconds": [round(t0, 3), round(t1, 3)]},
+                                                                  "seconds": [round(t0, 3), round(t1, 3)],
+                                                                  "tightened": round((t1 - t0) - clip, 2)},
                                                      "sentences": rows}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     # 3) script.md — 잘라 낸 문장만(문단은 롱폼 그대로), 팩트체크는 롱폼 것
@@ -234,8 +261,14 @@ def cmd_make(ep: Path, args: argparse.Namespace) -> None:
     if fc:
         lines += ["## 팩트체크", "", f"롱폼 `{ep.name}` 의 팩트체크를 그대로 옮김(문장 번호는 롱폼 번호).", "", fc, ""]
     lines += ["## 제목 3안", "", f"고른 제목: {title}", ""]
-    if args.screen:
-        lines += ["## 첫 화면 문구", "", args.screen, ""]
+    screen = args.screen
+    if not screen and (ep / "render" / "plan.json").exists():   # 첫 화면 문구가 없으면 구간 첫 장면 제목으로(커버가 늘 생기게)
+        for sc in json.loads((ep / "render" / "plan.json").read_text(encoding="utf-8"))["scenes"]:
+            if sc["sentences"][0] <= a <= sc["sentences"][1]:
+                screen = " ".join("".join(x["t"] for x in line) for line in sc["headline"])
+                break
+    if screen:
+        lines += ["## 첫 화면 문구", "", screen, ""]
     (out / "script.md").write_text("\n".join(lines), encoding="utf-8")
 
     # 4) 장면 설계 — 구간에 걸친 롱폼 장면만, 번호를 다시
@@ -264,7 +297,7 @@ def cmd_make(ep: Path, args: argparse.Namespace) -> None:
         plan_out.write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"[장면] 롱폼 장면 {len(scenes)}개를 옮겼습니다 → {plan_out}")
 
-    print(f"[잘라 냄] 문장 {a}~{b} ({b - a + 1}개) · {clip:.1f}초 → {out}")
+    print(f"[잘라 냄] 문장 {a}~{b} ({b - a + 1}개) · {clip:.1f}초" + (f"(쉼 {(t1 - t0) - clip:.1f}초 줄임)" if len(kept) > 1 else "") + f" → {out}")
     print("다음: uv run .claude/skills/shorts-render/scripts/make_video.py "
           f"\"{out}\" --stills  →  점검 화면을 보고 --render")
 
@@ -284,6 +317,7 @@ def main() -> None:
     p.add_argument("--theme", default="", help="롱폼과 다른 스타일로(비우면 롱폼 것)")
     p.add_argument("--masthead", default="")
     p.add_argument("--force", action="store_true", help="이미 있는 render/plan.json 도 새로")
+    p.add_argument("--tighten", action="store_true", help="문장 사이 0.3초 넘는 쉼을 0.25초로(쇼츠 호흡, 롱폼은 그대로)")
     a = ap.parse_args()
     ep = Path(a.episode).resolve()
     if a.cmd == "list":

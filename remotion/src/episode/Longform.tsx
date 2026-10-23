@@ -21,6 +21,7 @@ import {
   ShiftView,
   StatementView,
 } from "./Episode";
+import { HeatmapView, WaterfallView } from "./Cards";
 
 // 롱폼 한 편(1920×1080) — 쇼츠 Episode 와 같은 장면 종류·스타일을 가로 화면에 놓는다.
 // 왼쪽 칸: 제목 + 상자, 오른쪽 칸: 숫자·글·체크·막대(쇼츠의 본문 폭 864 와 같아 크기를 그대로 쓴다).
@@ -138,6 +139,10 @@ const LongScene: React.FC<{
         {L.kind === "checks" ? <ChecksView th={th} l={L} t0={t0} /> : null}
         {L.kind === "parts" ? <PartsView th={th} l={L} t0={t0} /> : null}
         {L.kind === "rows" ? <RowsView th={th} l={L} t0={t0} /> : null}
+        {L.kind === "waterfall" ? (
+          <WaterfallView th={th} l={L} t0={t0} />
+        ) : null}
+        {L.kind === "heatmap" ? <HeatmapView th={th} l={L} t0={t0} /> : null}
       </div>
       {s.source ? (
         <div

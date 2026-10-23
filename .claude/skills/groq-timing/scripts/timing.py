@@ -65,7 +65,7 @@ def transcript(audio: Path) -> dict:
     f = CACHE / f"{audio_hash(audio)}.json"
     if f.exists():
         return json.loads(f.read_text(encoding="utf-8"))
-    print(f"[문장 시각] Groq {MODEL} 받아 적는 중 … ({audio.name})", flush=True)
+    print(f"[자막 맞추기] Groq {MODEL} 받아 적는 중 … ({audio.name})", flush=True)
     for attempt in range(3):                        # 잠깐 끊겨도 바로 멈추지 않게
         try:
             with audio.open("rb") as fh:
@@ -188,7 +188,7 @@ def measure(ep: Path) -> list[dict]:
     src = max(cands, key=lambda k: difflib.SequenceMatcher(None, heard_all, nz(cands[k]), autojunk=False).ratio())
     said = cands[src]
     heard = split_sentences(said)
-    print(f"[문장 시각] 받아 적은 글을 {src}과 맞춥니다", flush=True)
+    print(f"[자막 맞추기] 받아 적은 글을 {src}과 맞춥니다", flush=True)
     if len(heard) != len(shown):
         sys.exit(f"[중단] 문장 수가 다릅니다 — 대본 {len(shown)} · {src} {len(heard)}")
     segs = segments(audio)

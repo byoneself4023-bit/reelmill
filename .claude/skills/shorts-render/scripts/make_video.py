@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.10"
 # ///
-"""장면 설계(render/plan.json) + 문장 시각(sentences.json) + 나레이션으로 영상을 조립한다(Remotion).
+"""장면 설계(render/plan.json) + 자막 맞추기 결과(sentences.json) + 나레이션으로 영상을 조립한다(Remotion).
 
   uv run make_video.py <에피소드 폴더> --stills    # 장면마다 끝 무렵 정지 화면 → render/check/NN.png (점검용)
   uv run make_video.py <에피소드 폴더> --render    # 영상 → <에피소드>/video.mp4 + 커버 cover.png
@@ -186,7 +186,8 @@ def cover(ep: Path, props: dict) -> None:
         print("[커버] 첫 화면 문구가 없어 건너뜁니다")
         return
     out = ep / "cover.png"
-    remotion(["still", "Cover", str(out)], {"theme": props["theme"], "masthead": props["masthead"], "text": text, "title": title})
+    remotion(["still", "Cover", str(out)], {"theme": props["theme"], "masthead": props["masthead"],
+                                            "mastLabel": props.get("mastLabel", ""), "text": text, "title": title})
     print(f"→ {out}")
 
 
@@ -210,10 +211,9 @@ def main() -> None:
     if a.stills:
         out = ep / "render" / "check"
         out.mkdir(parents=True, exist_ok=True)
-        for i, s in enumerate(props["scenes"], 1):
-            f = max(0, int((s["end"] - 0.3) * FPS))
-            print(f"[점검] 장면 {i} · {f / FPS:.1f}초", flush=True)
-            remotion(["still", "Episode", str(out / f"{i:02d}.png"), f"--frame={f}", pub], props)
+        jobs = [{"frame": max(0, int((s["end"] - 0.3) * FPS)), "out": str(out / f"{i:02d}.png"), "label": f"장면 {i}"}
+                for i, s in enumerate(props["scenes"], 1)]
+        batch_stills("Episode", props, jobs, pub)
         print(f"→ {out}")
     elif a.cover:
         cover(ep, props)
@@ -225,10 +225,39 @@ def main() -> None:
         cover(ep, props)
 
 
+def batch_stills(comp: str, props: dict, jobs: list[dict], pub: str) -> None:
+    """한 번만 묶고 브라우저 하나로 정지 화면을 전부 뽑는다(remotion still 을 장마다 부르면 장마다 20초 가까이 걸린다).
+    소리는 빼고 그린다 — 정지 화면엔 필요 없고, 나레이션을 장마다 읽으면 느리다."""
+    props = {**props, "audio": ""}
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = str(Path(tmp) / "bundle")
+        print(f"[점검] Remotion 묶는 중 … (정지 화면 {len(jobs)}장)", flush=True)
+        remotion(["bundle", f"--out-dir={bundle}", pub], None)
+        (Path(tmp) / "props.json").write_text(json.dumps(props, ensure_ascii=False), encoding="utf-8")
+        (Path(tmp) / "jobs.json").write_text(json.dumps(jobs, ensure_ascii=False), encoding="utf-8")
+        r = subprocess.run(["node", "scripts/stills.mjs", bundle, comp, str(Path(tmp) / "props.json"),
+                            str(Path(tmp) / "jobs.json")], cwd=STUDIO, text=True, encoding="utf-8")
+        if r.returncode != 0:
+            sys.exit("[중단] 정지 화면 뽑기 실패")
+
+
+def thumbnail(ep: Path, props: dict) -> None:
+    """롱폼 16:9 썸네일(1280×720): 고른 제목 + 첫 장면 제목. 영상에는 넣지 않고 스튜디오에서 미리보기 이미지로 올린다."""
+    md = (ep / "script.md").read_text(encoding="utf-8")
+    picked = re.search(r"고른 제목:\s*(?:\d+\.\s*)?(.+)", md)
+    title = picked.group(1).strip() if picked else md.splitlines()[0].lstrip("# ").strip()
+    first = " ".join("".join(x["t"] for x in line) for line in props["scenes"][0]["headline"])
+    out = ep / "thumbnail.png"
+    remotion(["still", "LongCover", str(out)], {"theme": props["theme"], "masthead": props["masthead"],
+                                                "mastLabel": props.get("mastLabel", ""), "title": title, "text": first})
+    print(f"→ {out}")
+
+
 def long_video(ep: Path, props: dict, a: argparse.Namespace, pub: str) -> None:
     """롱폼 16:9. 점검 화면은 장면마다 끝 무렵 + 장마다 장 카드(시작 1.2초 뒤)."""
     if a.cover:
-        sys.exit("[중단] 롱폼 커버(16:9 썸네일)는 아직 없습니다")
+        thumbnail(ep, props)
+        return
     if a.stills:
         out = ep / "render" / "check"
         out.mkdir(parents=True, exist_ok=True)
@@ -250,43 +279,46 @@ def long_video(ep: Path, props: dict, a: argparse.Namespace, pub: str) -> None:
             for c in props["chapters"]:
                 jobs.append({"frame": int((c["start"] + 1.2) * FPS), "out": str(out / f"{pre}ch{c['no']}.png"),
                              "label": f"{c['no']}장 카드"})
-        with tempfile.TemporaryDirectory() as tmp:
-            bundle = str(Path(tmp) / "bundle")
-            print(f"[점검] Remotion 묶는 중 … (정지 화면 {len(jobs)}장)", flush=True)
-            remotion(["bundle", f"--out-dir={bundle}", pub], None)
-            (Path(tmp) / "props.json").write_text(json.dumps(props, ensure_ascii=False), encoding="utf-8")
-            (Path(tmp) / "jobs.json").write_text(json.dumps(jobs, ensure_ascii=False), encoding="utf-8")
-            r = subprocess.run(["node", "scripts/stills.mjs", bundle, "Longform", str(Path(tmp) / "props.json"),
-                                str(Path(tmp) / "jobs.json")], cwd=STUDIO, text=True, encoding="utf-8")
-            if r.returncode != 0:
-                sys.exit("[중단] 정지 화면 뽑기 실패")
+        batch_stills("Longform", props, jobs, pub)
         print(f"→ {out}")
         return
+    (ep / "thumbnail.png").unlink(missing_ok=True)   # 「썸네일 있음」은 이번 렌더가 만든 것만
     out = ep / "video.mp4"
     print(f"[렌더] 롱폼 16:9 · {props['duration']:.1f}초 · 장 {len(props['chapters'])}개 · 장면 {len(props['scenes'])}개 …", flush=True)
     # 소리 없이 그린 뒤 나레이션을 ffmpeg 로 붙인다 — 8분짜리 소리를 Remotion 이 프레임마다 섞으면
     # 임시 파일이 커서(디스크가 빠듯하면 ENOSPC) 느리다. 소리는 narration.mp3 그대로라 결과는 같다.
     # 2분씩 나눠 그린다 — 중간에 멈춰도(디스크·전원) 다시 부르면 다 그린 조각은 건너뛴다.
-    # 조각 이름에 「무엇으로 그렸나」 지문을 넣는다 — 렌더 값(props)과 Remotion 코드(src)가 같을 때만 옛 조각을 다시 쓴다.
-    # 대본·plan·스타일·화면 코드를 바꾸면 지문이 달라지고, 지문이 다른 옛 조각은 시작할 때 지운다.
-    h = hashlib.sha256(json.dumps({**props, "audio": ""}, sort_keys=True, ensure_ascii=False).encode("utf-8"))
+    # 조각마다 「무엇으로 그렸나」 지문을 이름에 넣는다 — 그 조각 시간 안의 장면·자막·장 카드와 공통 값(스타일·머리글),
+    # Remotion 코드(src)가 같을 때만 지난 조각을 다시 쓴다. 장면 하나만 고치면 그 장면이 든 조각만 다시 그린다.
+    # 조각은 렌더가 끝나도 남겨 둔다(render/parts). 지문이 맞지 않는 옛 조각은 시작할 때 지운다.
+    code = hashlib.sha256()
     for f in sorted((STUDIO / "src").rglob("*")):
         if f.is_file():
-            h.update(f.relative_to(STUDIO).as_posix().encode("utf-8") + f.read_bytes())
-    tag = h.hexdigest()[:8]
+            code.update(f.relative_to(STUDIO).as_posix().encode("utf-8") + f.read_bytes())
+    common = {k: v for k, v in props.items() if k not in ("scenes", "captions", "chapters", "audio", "duration")}
+    total = math.ceil(props["duration"] * FPS)
     parts_dir = ep / "render" / "parts"
     parts_dir.mkdir(parents=True, exist_ok=True)
-    for old in parts_dir.iterdir():
-        if old.suffix == ".mp4" and not old.name.endswith(f"-{tag}.mp4"):
-            print(f"[렌더] 지문이 다른 옛 조각을 지웁니다: {old.name}")
-            old.unlink()
-    total = math.ceil(props["duration"] * FPS)
-    parts = []
+    plan_parts = []
     for k, f0 in enumerate(range(0, total, CHUNK)):
         f1 = min(total, f0 + CHUNK) - 1
-        part = parts_dir / f"{k + 1:02d}-{f0}-{f1}-{tag}.mp4"
+        t0, t1 = f0 / FPS, (f1 + 1) / FPS
+        within = lambda xs: [x for x in xs if x["start"] < t1 and x["end"] > t0]
+        h = hashlib.sha256(code.digest())
+        h.update(json.dumps({"common": common, "scenes": within(props["scenes"]), "captions": within(props["captions"]),
+                             "chapters": props["chapters"], "range": [f0, f1]},
+                            sort_keys=True, ensure_ascii=False).encode("utf-8"))
+        plan_parts.append((k, f0, f1, parts_dir / f"{k + 1:02d}-{f0}-{f1}-{h.hexdigest()[:8]}.mp4"))
+    keep = {x[3].name for x in plan_parts}
+    for old in parts_dir.iterdir():
+        if old.suffix == ".mp4" and old.name not in keep:
+            print(f"[렌더] 지문이 다른 옛 조각을 지웁니다: {old.name}")
+            old.unlink()
+    parts = []
+    for k, f0, f1, part in plan_parts:
         parts.append(part)
         if part.exists():
+            print(f"[렌더] 조각 {k + 1} 그대로 씀(바뀐 것 없음)", flush=True)
             continue
         print(f"[렌더] 조각 {k + 1} · {f0 / FPS:.0f}~{(f1 + 1) / FPS:.0f}초", flush=True)
         tmp = parts_dir / f"{part.stem}.tmp.mp4"
@@ -305,10 +337,12 @@ def long_video(ep: Path, props: dict, a: argparse.Namespace, pub: str) -> None:
     if r.returncode != 0:
         sys.exit(f"[중단] 나레이션 붙이기 실패\n{r.stderr[-800:]}")
     silent.unlink(missing_ok=True)
-    for x in parts_dir.iterdir():
-        x.unlink()
-    parts_dir.rmdir()
+    (parts_dir / "list.txt").unlink(missing_ok=True)
     print(f"→ {out}")
+    try:                                         # 썸네일이 실패해도 영상은 끝난 것으로 둔다(어떤 오류든)
+        thumbnail(ep, props)
+    except (Exception, SystemExit) as e:
+        print(f"[썸네일] 실패 — 영상은 정상입니다. 다시: make_video.py <폴더> --long --cover ({str(e)[-200:]})")
     print("[챕터] 유튜브 설명란에 붙일 장 시각:")
     for c in props["chapters"]:
         m, s = divmod(int(c["start"]), 60)

@@ -17,6 +17,12 @@ import {
   ThemeKey,
   loadThemeFonts,
 } from "../drafts/themes";
+import {
+  HeatmapLayout,
+  HeatmapView,
+  WaterfallLayout,
+  WaterfallView,
+} from "./Cards";
 import { Headline, Masthead, Stamp } from "../drafts/Draft";
 
 // 영상 한 편 — 4단계에서 고른 스타일로 장면을 이어 붙이고 나레이션·자막을 얹는다.
@@ -41,6 +47,8 @@ export type Layout =
       title?: string;
       rows: { label: string; value: string; at: number; em?: boolean }[];
     }
+  | WaterfallLayout
+  | HeatmapLayout
   | {
       kind: "parts";
       total: string;
@@ -416,6 +424,11 @@ export const PartsView: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const sum = l.parts.reduce((a, p) => a + p.weight, 0);
+  // 이름 칸은 가장 긴 이름에 맞춘다(한글 한 글자 ≈ 48px). 짧은 이름이면 예전 그대로 230px
+  const nameW = Math.min(
+    340,
+    Math.max(230, Math.max(...l.parts.map((p) => p.name.length)) * 50 + 8),
+  );
   return (
     <div style={{ fontFamily: th.body }}>
       <div
@@ -485,8 +498,9 @@ export const PartsView: React.FC<{
                   fontSize: 48,
                   fontWeight: 700,
                   color: th.ink,
-                  width: 230,
+                  width: nameW,
                   flexShrink: 0,
+                  whiteSpace: "nowrap",
                 }}
               >
                 {p.name}
@@ -553,6 +567,10 @@ const Scene: React.FC<{ th: Theme; masthead: string; s: SceneProps }> = ({
         {L.kind === "checks" ? <ChecksView th={th} l={L} t0={t0} /> : null}
         {L.kind === "parts" ? <PartsView th={th} l={L} t0={t0} /> : null}
         {L.kind === "rows" ? <RowsView th={th} l={L} t0={t0} /> : null}
+        {L.kind === "waterfall" ? (
+          <WaterfallView th={th} l={L} t0={t0} />
+        ) : null}
+        {L.kind === "heatmap" ? <HeatmapView th={th} l={L} t0={t0} /> : null}
         {s.box ? (
           <Appear
             at={s.box.at - t0}

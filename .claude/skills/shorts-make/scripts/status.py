@@ -19,7 +19,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parents[4]
-KEYS = [("ELEVENLABS_API_KEY", "2 나레이션"), ("ELEVENLABS_VOICE_ID", "2 나레이션"), ("GROQ_API_KEY", "3 문장 시각")]
+KEYS = [("ELEVENLABS_API_KEY", "2 나레이션"), ("ELEVENLABS_VOICE_ID", "2 나레이션"), ("GROQ_API_KEY", "3 자막 맞추기")]
 
 
 def env_keys() -> dict[str, bool]:
@@ -63,7 +63,7 @@ def progress(ep: Path) -> int:
     steps = [
         ("1 대본", md.exists() and "## 대본" in md.read_text(encoding="utf-8") and "## 제목 3안" in md.read_text(encoding="utf-8")),
         ("2 나레이션", (ep / "narration.mp3").exists()),
-        ("3 문장 시각", timing_ok),
+        ("3 자막 맞추기", timing_ok),
         ("4 스타일 시안", bool(chosen)),
         ("5 조립·렌더", (ep / "video.mp4").exists()),
         ("6 업로드 문구", (ep / "upload.md").exists()),
