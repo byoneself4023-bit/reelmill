@@ -6,11 +6,14 @@
 |---|---|---|
 | 1 대본 | `/shorts-script` | script.md |
 | 2 나레이션 | `/shorts-narration` | narration.mp3 |
-| 3 문장 시각 | `/groq-timing` | sentences.json |
+| 3 자막 맞추기 | `/groq-timing` | sentences.json |
 | 4 스타일 시안 | `/shorts-style-drafts` | drafts/ |
 | 5 조립·렌더 | `/shorts-render` | video.mp4 · cover.png |
 | 6 업로드 문구 | `/shorts-upload` | upload.md |
 | 한 번에 | `/shorts-make` | 1~6단계를 이어서 |
+| 롱폼 → 쇼츠 | `/longform-cut` | 롱폼(16:9)의 장·문장 구간을 9:16 쇼츠로 |
+
+롱폼(5·8·10분, 16:9)은 1단계에서 길이를 롱폼으로 고르면 장으로 나눈 대본이 나오고, 5단계 `make_video.py --long` 으로 렌더합니다. 쇼츠는 롱폼에서 잘라 씁니다.
 
 ## 시작하기
 

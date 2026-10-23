@@ -9,15 +9,28 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Audio } from "@remotion/media";
-import { CAPTION_FONT, SAFE, THEMES, Theme, ThemeKey } from "../drafts/themes";
+import {
+  CAPTION_FONT,
+  SAFE,
+  THEMES,
+  Theme,
+  ThemeKey,
+  loadThemeFonts,
+} from "../drafts/themes";
+import {
+  HeatmapLayout,
+  HeatmapView,
+  WaterfallLayout,
+  WaterfallView,
+} from "./Cards";
 import { Headline, Masthead, Stamp } from "../drafts/Draft";
 
 // 영상 한 편 — 4단계에서 고른 스타일로 장면을 이어 붙이고 나레이션·자막을 얹는다.
 // 시각은 모두 초 단위로 받는다(3단계 sentences.json 에서 make_video.py 가 계산해 넣는다).
 // 요소는 「그 숫자를 말하는 문장」이 시작될 때 나타난다.
 
-type Span = { t: string; em?: boolean; swap?: string; swapAt?: number };
-type Layout =
+export type Span = { t: string; em?: boolean; swap?: string; swapAt?: number };
+export type Layout =
   | { kind: "number"; value: string; label: string; at: number }
   | {
       kind: "shift";
@@ -29,6 +42,13 @@ type Layout =
     }
   | { kind: "statement"; lines: Span[][]; at: number }
   | { kind: "checks"; items: { text: string; at: number }[] }
+  | {
+      kind: "rows";
+      title?: string;
+      rows: { label: string; value: string; at: number; em?: boolean }[];
+    }
+  | WaterfallLayout
+  | HeatmapLayout
   | {
       kind: "parts";
       total: string;
@@ -56,6 +76,7 @@ export type SceneProps = {
 export type EpisodeProps = {
   theme: ThemeKey;
   masthead: string;
+  mastLabel?: string; // 스타일의 머리글 이름을 이 영상에서만 바꿀 때(plan.json "mastLabel")
   audio: string; // 에피소드 폴더 안 파일 이름(렌더할 때 --public-dir 로 에피소드 폴더를 연다)
   duration: number; // 초
   scenes: SceneProps[];
@@ -65,10 +86,10 @@ export type EpisodeProps = {
 const W = 1080 - SAFE.left - SAFE.right;
 const fit = (text: string, base: number, len: number) =>
   Math.round(text.length > len ? (base * len) / text.length : base);
-const EASE = Easing.bezier(0.16, 1, 0.3, 1);
+export const EASE = Easing.bezier(0.16, 1, 0.3, 1);
 
 // 장면 안 시각(초) → 나타나기 0→1
-const useShow = (sec: number, len = 0.35) => {
+export const useShow = (sec: number, len = 0.35) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   return interpolate(frame, [sec * fps, (sec + len) * fps], [0, 1], {
@@ -78,7 +99,7 @@ const useShow = (sec: number, len = 0.35) => {
   });
 };
 
-const Appear: React.FC<{
+export const Appear: React.FC<{
   at: number;
   children: React.ReactNode;
   rise?: number;
@@ -92,7 +113,7 @@ const Appear: React.FC<{
   );
 };
 
-const Pop: React.FC<{
+export const Pop: React.FC<{
   at: number;
   children: React.ReactNode;
   style?: React.CSSProperties;
@@ -107,7 +128,7 @@ const Pop: React.FC<{
   );
 };
 
-const NumberView: React.FC<{
+export const NumberView: React.FC<{
   th: Theme;
   l: Extract<Layout, { kind: "number" }>;
   t0: number;
@@ -145,7 +166,7 @@ const NumberView: React.FC<{
   </Pop>
 );
 
-const ShiftView: React.FC<{
+export const ShiftView: React.FC<{
   th: Theme;
   l: Extract<Layout, { kind: "shift" }>;
   t0: number;
@@ -221,7 +242,7 @@ const ShiftView: React.FC<{
   );
 };
 
-const StatementView: React.FC<{
+export const StatementView: React.FC<{
   th: Theme;
   l: Extract<Layout, { kind: "statement" }>;
   t0: number;
@@ -282,7 +303,7 @@ const Swap: React.FC<{ th: Theme; s: Span; t0: number }> = ({ th, s, t0 }) => {
   );
 };
 
-const ChecksView: React.FC<{
+export const ChecksView: React.FC<{
   th: Theme;
   l: Extract<Layout, { kind: "checks" }>;
   t0: number;
@@ -337,7 +358,65 @@ const ChecksView: React.FC<{
   </div>
 );
 
-const PartsView: React.FC<{
+// 표 줄 — 줄마다 작은 이름 위에 큰 값(비용 비교·날짜처럼 이름–값이 여러 줄일 때).
+// 4줄 이상이면 한 줄에 이름(왼쪽)·값(오른쪽)으로 줄여 높이를 아낀다.
+export const RowsView: React.FC<{
+  th: Theme;
+  l: Extract<Layout, { kind: "rows" }>;
+  t0: number;
+}> = ({ th, l, t0 }) => {
+  const tight = l.rows.length >= 4;
+  return (
+    <div style={{ fontFamily: th.body, textAlign: "left" }}>
+      {l.title ? (
+        <div
+          style={{
+            fontSize: 40,
+            fontWeight: 700,
+            color: th.sub,
+            paddingBottom: 14,
+            borderBottom: `${th.box.width + 1}px solid ${th.rule}`,
+          }}
+        >
+          {l.title}
+        </div>
+      ) : null}
+      {l.rows.map((r) => (
+        <Appear
+          key={r.label}
+          at={r.at - t0}
+          style={{
+            padding: tight ? "12px 0 10px" : "16px 0 14px",
+            borderBottom: `2px solid ${th.rule}`,
+            display: tight ? "flex" : "block",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 20,
+          }}
+        >
+          <div style={{ fontSize: 34, fontWeight: 700, color: th.sub }}>
+            {r.label}
+          </div>
+          <div
+            style={{
+              fontFamily: th.num,
+              fontWeight: th.numWeight,
+              fontSize: fit(r.value, tight ? 60 : 72, tight ? 8 : 11),
+              lineHeight: 1.15,
+              color: r.em ? th.accent : th.ink,
+              whiteSpace: "nowrap",
+              letterSpacing: -1,
+            }}
+          >
+            {r.value}
+          </div>
+        </Appear>
+      ))}
+    </div>
+  );
+};
+
+export const PartsView: React.FC<{
   th: Theme;
   l: Extract<Layout, { kind: "parts" }>;
   t0: number;
@@ -345,6 +424,11 @@ const PartsView: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const sum = l.parts.reduce((a, p) => a + p.weight, 0);
+  // 이름 칸은 가장 긴 이름에 맞춘다(한글 한 글자 ≈ 48px). 짧은 이름이면 예전 그대로 230px
+  const nameW = Math.min(
+    340,
+    Math.max(230, Math.max(...l.parts.map((p) => p.name.length)) * 50 + 8),
+  );
   return (
     <div style={{ fontFamily: th.body }}>
       <div
@@ -414,8 +498,9 @@ const PartsView: React.FC<{
                   fontSize: 48,
                   fontWeight: 700,
                   color: th.ink,
-                  width: 230,
+                  width: nameW,
                   flexShrink: 0,
+                  whiteSpace: "nowrap",
                 }}
               >
                 {p.name}
@@ -481,6 +566,11 @@ const Scene: React.FC<{ th: Theme; masthead: string; s: SceneProps }> = ({
         ) : null}
         {L.kind === "checks" ? <ChecksView th={th} l={L} t0={t0} /> : null}
         {L.kind === "parts" ? <PartsView th={th} l={L} t0={t0} /> : null}
+        {L.kind === "rows" ? <RowsView th={th} l={L} t0={t0} /> : null}
+        {L.kind === "waterfall" ? (
+          <WaterfallView th={th} l={L} t0={t0} />
+        ) : null}
+        {L.kind === "heatmap" ? <HeatmapView th={th} l={L} t0={t0} /> : null}
         {s.box ? (
           <Appear
             at={s.box.at - t0}
@@ -568,7 +658,10 @@ const Captions: React.FC<{ th: Theme; items: EpisodeProps["captions"] }> = ({
 };
 
 export const Episode: React.FC<EpisodeProps> = (p) => {
-  const th = THEMES[p.theme];
+  const th = p.mastLabel
+    ? { ...THEMES[p.theme], mastLabel: p.mastLabel }
+    : THEMES[p.theme];
+  loadThemeFonts(th);
   const { fps } = useVideoConfig();
   return (
     <AbsoluteFill

@@ -1,9 +1,9 @@
 ---
 name: groq-timing
-description: "쇼츠 3단계 — 문장 시각. 2단계 narration.mp3 를 Groq 로 받아 적고 소리 구간과 맞춰, 대본 문장마다 시작·끝 시각(초)을 sentences.json 에 적는다. 화면 전환·자막이 이 시각을 따른다. /groq-timing 으로 부른다. 폴더 이름(예: gold-medal)은 생략하면 가장 최근 에피소드를 쓴다."
+description: "쇼츠 3단계 — 자막 맞추기. 2단계 narration.mp3 를 Groq 로 받아 적고 소리 구간과 맞춰, 대본 문장마다 시작·끝 시각(초)을 sentences.json 에 적는다. 화면 전환·자막이 이 시각을 따른다. /groq-timing 으로 부른다. 폴더 이름(예: gold-medal)은 생략하면 가장 최근 에피소드를 쓴다."
 ---
 
-# 문장 시각
+# 자막 맞추기
 
 입력: `work/episodes/<폴더>/` 의 `script.md`(대본) · `narration.mp3`(나레이션) · `reading.txt`(Typecast 로 만들었을 때만)
 - 폴더 이름을 안 주면 `work/episodes/` 에서 narration.mp3 가 가장 최근에 바뀐 폴더를 고르고 한 줄로 밝힌다.
