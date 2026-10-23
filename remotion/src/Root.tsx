@@ -1,5 +1,6 @@
 import { Composition, Still } from "remotion";
 import { Episode } from "./episode/Episode";
+import { Longform } from "./episode/Longform";
 import { Cover } from "./episode/Cover";
 import { Draft } from "./drafts/Draft";
 import { Board, boardSize } from "./drafts/Board";
@@ -64,6 +65,26 @@ export const RemotionRoot: React.FC = () => {
           duration: 10,
           scenes: [],
           captions: [],
+        }}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.ceil(props.duration * 30),
+        })}
+      />
+      <Composition
+        id="Longform"
+        component={Longform}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={300}
+        defaultProps={{
+          theme: "assay",
+          masthead: "",
+          audio: "",
+          duration: 10,
+          scenes: [],
+          captions: [],
+          chapters: [],
         }}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.ceil(props.duration * 30),

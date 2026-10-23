@@ -31,11 +31,13 @@ description: "쇼츠 5단계 — 조립·렌더. 4단계에서 고른 스타일�
 | `statement` | 큰 글 두세 줄. 낱말 바꾸기 가능(`swap`·`swapAt`) | lines · at |
 | `checks` | 체크 항목이 하나씩 | items[{text, at}] |
 | `parts` | 전체 막대 안 몫이 하나씩 차오름 + 줄마다 이름·값·짧은 설명 | total · parts[{name, value, weight, tone, note, at, noteAt}] |
+| `rows` | 표 줄 — 줄마다 작은 이름 위에 큰 값(4줄 이상이면 한 줄에 이름·값). 비용 비교·날짜처럼 이름–값이 여러 줄일 때 | title · rows[{label, value, at, em}] |
 
+- `shift` 는 두 값을 합쳐 9자 안일 때만 쓴다(「2종 → 3종」). 「104.79% → 90.95%」처럼 길면 오른쪽 안전 영역을 넘는다 — `number` 나 `rows` 로 바꾼다. `checks` 는 4개까지, `rows` 는 제목 포함 4줄까지가 자막·출처 줄과 안 겹친다.
 - `at`·`noteAt`·`swapAt` 은 **문장 번호**다 — 그 문장이 시작할 때 나타난다(스크립트가 초로 바꾼다).
 - 장면마다 `headline`(2줄 안), 필요하면 `box`({title, text, at}), `source`(팩트체크 표의 출처, 없으면 빈 문자열).
 - 화면 숫자는 팩트체크 ✓ 값만. 대본에 없는 계산값(예: 95.5%)은 넣지 않는다.
-- `theme` 은 `drafts.json` 의 `chosen`. `masthead` 는 머리글 한 줄.
+- `theme` 은 `drafts.json` 의 `chosen`. `masthead` 는 머리글 한 줄. 스타일의 머리글 이름(예: 「분석 성적서」)을 이 영상에서만 바꾸려면 `mastLabel` 을 적는다.
 
 ## 2. 점검 화면 뽑기
 
@@ -55,6 +57,26 @@ uv run .claude/skills/shorts-render/scripts/make_video.py work/episodes/<폴더>
 - 길이 = 나레이션 + 0.4초. 자막은 대본 문장 그대로 쓰되, **숫자 바로 뒤 단위는 기호로 줄인다**(그램→g · 퍼센트→% · 미터→m · 킬로그램→kg 등, 「미터기」처럼 숫자 뒤가 아니면 그대로). 대본·나레이션은 바꾸지 않는다. 문장마다 13자·4어절 안으로 나눠 글자 수 비례로 시각을 준다(문장 끝 마침표는 뺀다).
 - 렌더 뒤 몇 장면 중간 프레임을 뽑아 요소가 말과 같이 나오는지, 소리가 들어갔는지(ffmpeg volumedetect) 확인한다.
 - 영상을 사용자에게 보내 확인받는다. 고칠 곳은 plan.json 을 고쳐 2·3을 다시 한다.
+
+## 롱폼(16:9) — `--long`
+
+롱폼 에피소드(script.md 「## 대본」에 `### N장. 제목` 줄이 있는 것)는 같은 순서로 하되 `--long` 을 붙인다.
+
+```bash
+uv run .claude/skills/shorts-render/scripts/make_video.py work/episodes/<롱폼 폴더> --long --stills
+uv run .claude/skills/shorts-render/scripts/make_video.py work/episodes/<롱폼 폴더> --long --stills --theme notice --scenes 3,9   # 스타일 비교용
+uv run .claude/skills/shorts-render/scripts/make_video.py work/episodes/<롱폼 폴더> --long --render
+```
+
+- Composition 「Longform」(`src/episode/Longform.tsx`, 1920×1080, 30fps). 장면 종류·칸은 쇼츠와 같다 — 왼쪽 칸에 제목·상자, 오른쪽 칸(폭 864, 쇼츠 본문 폭과 같음)에 숫자·글·체크·막대. 띠가 있는 스타일(poster·signage)은 띠가 왼쪽 칸 바탕이 된다.
+- 장이 시작할 때 장 제목 카드(장 번호 · 장 제목 · 전체 장 목록)가 2.6초 덮는다. 나레이션은 이어진다. 장 첫 문장에서 장면을 나눈다(넘으면 경고).
+- 장면 하나 = 문장 2~8개, 6~15초. 쇼츠로 잘라 쓸 구간의 경계에서도 장면을 나눈다(잘라 낸 쇼츠가 장면을 그대로 물려받는다). 제목은 13자 × 2줄 안 — 잘라 낸 9:16 에서도 그대로 들어간다.
+- 안전 영역: 양옆 110 · 머리글 y 64 · 본문 y 196~816 · 출처 y 846 · 자막 y 906(56px).
+- 점검 화면: 장면마다 `render/check/NN.png` + 장마다 `render/check/chN.png`(장 카드). `--theme` 을 주면 `render/check/<스타일>-NN.png` 로 따로 뽑는다(plan.json 은 그대로). `--theme`·`--scenes` 는 `--long --stills` 에서만 쓴다(쇼츠 점검 화면은 늘 전부 뽑는다).
+- 렌더가 끝나면 유튜브 설명란에 붙일 장 시각(0:00 장 제목)을 찍어 준다. 롱폼 커버(16:9 썸네일)는 아직 없다.
+- 점검 화면은 한 번 묶은 뒤 브라우저 하나로(`remotion/scripts/stills.mjs`), 소리 없이 뽑는다 — 37장 약 4분.
+- 렌더는 2분 조각으로 나눠 그리고, 조각 이름에 렌더 값·화면 코드 지문을 넣어 바뀐 것이 없을 때만 멈춘 뒤 이어 그린다(지문이 다른 옛 조각은 지운다). 소리 없이 그린 뒤 `narration.mp3` 를 ffmpeg 로 붙인다(8분짜리 소리를 Remotion 이 섞으면 임시 파일이 커서 디스크가 빠듯하면 멈춘다). 8분 영상 기준 수십 분이 걸릴 수 있어 백그라운드로 돌린다.
+- 쇼츠는 롱폼에서 잘라 낸다 → `/longform-cut`.
 
 ## 결과물
 

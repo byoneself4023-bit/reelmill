@@ -109,6 +109,7 @@ def main() -> None:
     if not md.exists():
         sys.exit(f"[중단] {md} 가 없습니다 — 1단계 대본을 먼저 만드세요")
     body = md.read_text(encoding="utf-8").split("## 대본", 1)[1].split("\n## ", 1)[0]
+    body = "\n".join(x for x in body.splitlines() if not x.lstrip().startswith("#"))   # 롱폼 장 제목(### N장.)은 읽지 않는다
     text = for_voice(body)
     print("[나레이션] 보낼 글:\n" + text)
     need, have = len(text), left()

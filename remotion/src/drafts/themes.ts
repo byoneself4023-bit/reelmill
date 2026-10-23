@@ -1,39 +1,57 @@
-import { loadFont as loadSans } from "@remotion/google-fonts/NotoSansKR";
-import { loadFont as loadSerif } from "@remotion/google-fonts/NotoSerifKR";
-import { loadFont as loadPlex } from "@remotion/google-fonts/IBMPlexSansKR";
-import { loadFont as loadBatang } from "@remotion/google-fonts/GowunBatang";
-import { loadFont as loadBlack } from "@remotion/google-fonts/BlackHanSans";
-import { loadFont as loadHahmlet } from "@remotion/google-fonts/Hahmlet";
-import { loadFont as loadCoding } from "@remotion/google-fonts/NanumGothicCoding";
+import * as Sans from "@remotion/google-fonts/NotoSansKR";
+import * as Serif from "@remotion/google-fonts/NotoSerifKR";
+import * as Plex from "@remotion/google-fonts/IBMPlexSansKR";
+import * as Batang from "@remotion/google-fonts/GowunBatang";
+import * as Black from "@remotion/google-fonts/BlackHanSans";
+import * as Hahmlet from "@remotion/google-fonts/Hahmlet";
+import * as Coding from "@remotion/google-fonts/NanumGothicCoding";
 
-const sans = loadSans("normal", {
-  weights: ["400", "700", "900"],
-  subsets: ["korean", "latin"],
-});
-const serif = loadSerif("normal", {
-  weights: ["400", "700", "900"],
-  subsets: ["korean", "latin"],
-});
-const plex = loadPlex("normal", {
-  weights: ["400", "700"],
-  subsets: ["korean", "latin"],
-});
-const batang = loadBatang("normal", {
-  weights: ["400", "700"],
-  subsets: ["korean", "latin"],
-});
-const black = loadBlack("normal", {
-  weights: ["400"],
-  subsets: ["korean", "latin"],
-});
-const hahmlet = loadHahmlet("normal", {
-  weights: ["400", "700", "900"],
-  subsets: ["korean", "latin"],
-});
-const coding = loadCoding("normal", {
-  weights: ["400", "700"],
-  subsets: ["korean", "latin"],
-});
+// 글꼴은 고른 스타일이 쓰는 것만 받는다(loadThemeFonts). 일곱 가족을 다 받으면 렌더 탭마다
+// 글꼴 파일 1,400개 남짓을 받아, 네트워크가 잠깐 끊기면 렌더가 시간 초과로 멈췄다(2026-10-22 롱폼).
+const FONTS: Record<string, () => void> = {
+  [Sans.fontFamily]: () =>
+    Sans.loadFont("normal", {
+      weights: ["400", "700", "900"],
+      subsets: ["korean", "latin"],
+    }),
+  [Serif.fontFamily]: () =>
+    Serif.loadFont("normal", {
+      weights: ["400", "700", "900"],
+      subsets: ["korean", "latin"],
+    }),
+  [Plex.fontFamily]: () =>
+    Plex.loadFont("normal", {
+      weights: ["400", "700"],
+      subsets: ["korean", "latin"],
+    }),
+  [Batang.fontFamily]: () =>
+    Batang.loadFont("normal", {
+      weights: ["400", "700"],
+      subsets: ["korean", "latin"],
+    }),
+  [Black.fontFamily]: () =>
+    Black.loadFont("normal", {
+      weights: ["400"],
+      subsets: ["korean", "latin"],
+    }),
+  [Hahmlet.fontFamily]: () =>
+    Hahmlet.loadFont("normal", {
+      weights: ["400", "700", "900"],
+      subsets: ["korean", "latin"],
+    }),
+  [Coding.fontFamily]: () =>
+    Coding.loadFont("normal", {
+      weights: ["400", "700"],
+      subsets: ["korean", "latin"],
+    }),
+};
+const sans = { fontFamily: Sans.fontFamily };
+const serif = { fontFamily: Serif.fontFamily };
+const plex = { fontFamily: Plex.fontFamily };
+const batang = { fontFamily: Batang.fontFamily };
+const black = { fontFamily: Black.fontFamily };
+const hahmlet = { fontFamily: Hahmlet.fontFamily };
+const coding = { fontFamily: Coding.fontFamily };
 
 // 쇼츠 안전 영역(1080×1920): 위 280 · 아래 520 · 왼쪽 76 · 오른쪽 140. 자막은 y≈1300.
 export const SAFE = {
@@ -241,6 +259,19 @@ export const notice: Theme = {
   parts: ["#B9C3D1", "#1F4FA0", "#D9A21B"],
 };
 
+// 게시 공고 — 공고문의 미색 종이·남색 명조에 이중 줄 머리글과 붉은 강조. 도장은 없다.
+// 머리글 이름은 영상마다 plan.json 의 "mastLabel" 로 바꿔 쓴다(예: 「안내문」).
+export const noticeBoard: Theme = {
+  ...notice,
+  name: "게시 공고",
+  from: "공고문",
+  mastLabel: "게시 공고",
+  mastLine: "6px double #1D2B3E",
+  accent: "#B0302A",
+  stamp: undefined, // 도장이 가로 화면에서 결과 숫자를 가려 뺐다
+  parts: ["#B9C3D1", "#1F4FA0", "#B0302A"],
+};
+
 // 영수증 — 실무 노트의 「모눈·상자·숫자 강조」를 「영수증」으로: 흰 종이, 고정폭 글꼴, 점선, 합계 빨강
 export const receipt: Theme = {
   name: "영수증",
@@ -405,6 +436,7 @@ export const THEMES = {
   auction,
   poster,
   notice,
+  "notice-board": noticeBoard,
   receipt,
   lottery,
   ticket,
@@ -412,3 +444,14 @@ export const THEMES = {
   signage,
 } as const;
 export type ThemeKey = keyof typeof THEMES;
+
+const loaded = new Set<string>();
+// 스타일 하나가 쓰는 글꼴(제목·본문·숫자)과 자막 글꼴만 받는다. 같은 글꼴은 한 번만.
+export const loadThemeFonts = (th: Theme) => {
+  for (const f of [CAPTION_FONT, th.head, th.body, th.num]) {
+    if (!loaded.has(f)) {
+      loaded.add(f);
+      FONTS[f]?.();
+    }
+  }
+};

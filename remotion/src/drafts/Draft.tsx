@@ -1,6 +1,13 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { CAPTION_FONT, SAFE, THEMES, ThemeKey, Theme } from "./themes";
+import {
+  CAPTION_FONT,
+  SAFE,
+  THEMES,
+  ThemeKey,
+  Theme,
+  loadThemeFonts,
+} from "./themes";
 
 // 스타일 시안 한 장(정지 화면). 같은 장면을 스타일만 바꿔 그려 비교한다.
 // 화면은 그림 없이 글·숫자·상자·막대로만 짠다(사내 신문 지면형·실무 노트형과 같은 방식).
@@ -447,6 +454,7 @@ const ChecksView: React.FC<{ th: Theme; l: Checks }> = ({ th, l }) => (
 
 export const Draft: React.FC<DraftProps> = (p) => {
   const th = THEMES[p.theme];
+  loadThemeFonts(th);
   const boxTitle = th.headAccent ?? (th.tag ? th.tag.bg : th.accent);
   return (
     <AbsoluteFill

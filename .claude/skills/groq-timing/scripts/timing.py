@@ -167,6 +167,7 @@ def script_map(stream: str, script_norm: str) -> list[int]:
 def script_sentences(ep: Path) -> list[str]:
     md = (ep / "script.md").read_text(encoding="utf-8")
     body = md.split("## 대본", 1)[1].split("\n## ", 1)[0]
+    body = "\n".join(x for x in body.splitlines() if not x.lstrip().startswith("#"))   # 롱폼 장 제목(### N장.)은 읽지 않는다
     return split_sentences(" ".join(body.split()))
 
 

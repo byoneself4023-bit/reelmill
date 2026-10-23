@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { SAFE, THEMES, ThemeKey } from "../drafts/themes";
+import { SAFE, THEMES, ThemeKey, loadThemeFonts } from "../drafts/themes";
 import { Masthead } from "../drafts/Draft";
 
 // 커버(썸네일) 한 장 — 첫 화면 문구를 고른 스타일로 크게. 영상에는 넣지 않고 스튜디오에서 커버로 올린다(9:16).
@@ -20,6 +20,7 @@ export const Cover: React.FC<CoverProps> = ({
   title,
 }) => {
   const th = THEMES[theme];
+  loadThemeFonts(th);
   const n = text.replace(/\s/g, "").length;
   const size = n <= 6 ? 190 : n <= 9 ? 160 : 130;
   return (
