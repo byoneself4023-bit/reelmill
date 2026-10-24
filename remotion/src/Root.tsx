@@ -6,6 +6,7 @@ import { Cover } from "./episode/Cover";
 import { Draft } from "./drafts/Draft";
 import { Board, boardSize } from "./drafts/Board";
 import { Showcase, SHOWCASE_SECONDS } from "./showcase/Showcase";
+import { ShowcaseLecture, lectureFrames, LectureProps } from "./showcase/ShowcaseLecture";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -114,6 +115,17 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{ intro: { minutes: 0, approvals: 0, fixes: 0 }, speed: 1, replay: 124, stages: [], lines: [], notice: "",
           zoneFacts: [], scriptLines: [], blogLines: [], excelLines: [], date: "",
           title: "예시 구역 · 공고문 한 장에서 영상·블로그까지", runLabel: "zone.py 실행 기록 — 예시 구역", excelName: "예시 구역 분담금 계산기.xlsx", sourceLabel: "원문(공고문)" }}
+      />
+      <Composition
+        id="ShowcaseLecture"
+        component={ShowcaseLecture}
+        width={1920}
+        height={1080}
+        fps={30}
+        durationInFrames={900}
+        defaultProps={{ lines: [], paper: [], zoneName: "예시 구역", steps: [], facts: [], scriptLines: [],
+          fix: { what: "", wrong: "", right: "" }, blogTitle: "", blogLines: [], chatUser: "", chatReply: "", reviewReply: "", approveWord: "" } as LectureProps}
+        calculateMetadata={({ props }) => ({ durationInFrames: lectureFrames(props.lines) })}
       />
     </>
   );
